@@ -256,9 +256,34 @@ bool process_instruction(GeneratorType& generator, const N64Recomp::Context& con
         return true;
     };
 
+    // With set_ra_on_calls, a call first sets $ra to its return address as the hardware does: some game routines read
+    // it (Jet Force Gemini's TrapDanglingJump finds its call site from $ra - 8).
+    auto set_ra_for_call = [&]() {
+        if (!context.set_ra_on_calls) {
+            return;
+        }
+        uint32_t return_address = instr_vram + 8;
+        InstructionContext lui_context{};
+        lui_context.rt = 31;
+        lui_context.imm16 = (uint16_t)(return_address >> 16);
+        lui_context.reloc_type = N64Recomp::RelocType::R_MIPS_NONE;
+        print_indent();
+        generator.process_unary_op(N64Recomp::unary_ops.at(InstrId::cpu_lui), lui_context);
+        InstructionContext ori_context{};
+        ori_context.rt = 31;
+        ori_context.rs = 31;
+        ori_context.imm16 = (uint16_t)(return_address & 0xFFFF);
+        ori_context.reloc_type = N64Recomp::RelocType::R_MIPS_NONE;
+        print_indent();
+        generator.process_binary_op(N64Recomp::binary_ops.at(InstrId::cpu_ori), ori_context);
+    };
+
     auto print_func_call_by_register = [&](int reg) {
         if (!process_delay_slot(false)) {
             return false;
+        }
+        if (reg != 31) {
+            set_ra_for_call();
         }
         print_indent();
         generator.emit_function_call_by_register(reg);
@@ -266,7 +291,7 @@ bool process_instruction(GeneratorType& generator, const N64Recomp::Context& con
         return true;
     };
 
-    auto print_func_call_by_address = [&generator, reloc_target_section_offset, has_reloc, reloc_section, reloc_reference_symbol, reloc_type, &context, &func, &static_funcs_out, &needs_link_branch, &print_indent, &process_delay_slot, &print_link_branch]
+    auto print_func_call_by_address = [&generator, reloc_target_section_offset, has_reloc, reloc_section, reloc_reference_symbol, reloc_type, &context, &func, &static_funcs_out, &needs_link_branch, &print_indent, &process_delay_slot, &print_link_branch, &set_ra_for_call]
         (uint32_t target_func_vram, bool tail_call = false, bool indent = false)
     {
         bool call_by_lookup = false;
@@ -344,6 +369,9 @@ bool process_instruction(GeneratorType& generator, const N64Recomp::Context& con
             }
             if (!process_delay_slot(false)) {
                 return false;
+            }
+            if (!tail_call) {
+                set_ra_for_call();
             }
             print_indent();
             if (reloc_reference_symbol != (size_t)-1) {

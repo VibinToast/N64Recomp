@@ -236,6 +236,8 @@ namespace N64Recomp {
         bool skip_validating_reference_symbols = true;
         // Whether all function calls (excluding reference symbols) should go through lookup.
         bool use_lookup_for_all_function_calls = false;
+        // Whether calls set $ra to the return address first, as the hardware does (for code a game reads $ra in).
+        bool set_ra_on_calls = false;
 
         //// Only used by the CLI, TODO move this to a struct in the internal headers.
         // A mapping of function name to index in the functions vector
