@@ -804,7 +804,7 @@ bool recompile_function_impl(GeneratorType& generator, const N64Recomp::Context&
     //fmt::print("Recompiling {}\n", func.name);
     std::vector<rabbitizer::InstructionCpu> instructions;
 
-    generator.emit_function_start(func.name, func_index);
+    generator.emit_function_start(func.definition_name.empty() ? func.name : func.definition_name, func_index);
     generator.emit_function_entry(func.name, func.vram);
 
     if (context.trace_mode) {

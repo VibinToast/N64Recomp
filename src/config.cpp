@@ -462,6 +462,28 @@ N64Recomp::Config::Config(const char* path) {
 
             // Function hooks (optional)
             function_hooks = get_function_hooks(table);
+
+            // Functions mods can't hook (optional): a list file, one name per line, # starts a comment.
+            std::optional<std::string> unhookable_opt = (*table)["unhookable_funcs_list"].value<std::string>();
+            if (unhookable_opt.has_value()) {
+                unhookable_funcs_list_path = concat_if_not_empty(basedir, unhookable_opt.value());
+            }
+        }
+
+        // Wrapped functions (optional)
+        toml::node_view wrappers_data = config_data["wrappers"];
+        if (wrappers_data.is_table()) {
+            std::optional<std::string> list_opt = wrappers_data["funcs_list"].value<std::string>();
+            std::optional<std::string> prefix_opt = wrappers_data["wrapper_prefix"].value<std::string>();
+            std::optional<std::string> register_opt = wrappers_data["register_func"].value<std::string>();
+            std::optional<std::string> output_opt = wrappers_data["output_file"].value<std::string>();
+            if (!list_opt.has_value() || !prefix_opt.has_value() || !register_opt.has_value() || !output_opt.has_value()) {
+                throw toml::parse_error("[wrappers] needs funcs_list, wrapper_prefix, register_func and output_file", wrappers_data.node()->source());
+            }
+            wrapped_funcs_list_path = concat_if_not_empty(basedir, list_opt.value());
+            wrapper_prefix = prefix_opt.value();
+            wrapper_register_func = register_opt.value();
+            wrappers_output_file = output_opt.value();
         }
 
         // Use trace mode if enabled (optional)

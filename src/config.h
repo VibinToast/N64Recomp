@@ -58,6 +58,14 @@ namespace N64Recomp {
         std::vector<std::string> stubbed_funcs;
         std::vector<std::string> ignored_funcs;
         std::vector<std::string> renamed_funcs;
+        // Functions mods can't hook: their function table entry gets rom_size 0 (optional, a list file).
+        std::filesystem::path unhookable_funcs_list_path;
+        // Functions wrapped by the game's own code (optional, the [wrappers] table): each listed function <name> is
+        // defined as <name>_orig, and a generated <name> calls <wrapper_prefix><name>, which calls <name>_orig.
+        std::filesystem::path wrapped_funcs_list_path;
+        std::string wrapper_prefix;
+        std::string wrapper_register_func;
+        std::string wrappers_output_file;
         std::vector<InstructionPatch> instruction_patches;
         std::vector<FunctionTextHook> function_hooks;
         std::vector<FunctionSize> manual_func_sizes;
