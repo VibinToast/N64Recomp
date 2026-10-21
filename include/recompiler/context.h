@@ -32,6 +32,9 @@ namespace N64Recomp {
         bool reimplemented;
         bool stubbed;
         std::unordered_map<int32_t, std::string> function_hooks;
+        // The name the function is defined under when it differs from name (a wrapped function's original); calls and
+        // the function tables keep using name. Empty: name.
+        std::string definition_name;
 
         Function(uint32_t vram, uint32_t rom, std::vector<uint32_t> words, std::string name, uint16_t section_index, bool ignored = false, bool reimplemented = false, bool stubbed = false)
                 : vram(vram), rom(rom), words(std::move(words)), name(std::move(name)), section_index(section_index), ignored(ignored), reimplemented(reimplemented), stubbed(stubbed) {}
