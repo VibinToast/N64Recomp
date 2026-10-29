@@ -29,6 +29,7 @@ struct ModManifest {
     std::string description;
     std::string short_description;
     std::vector<std::string> authors;
+    std::vector<std::string> tags;
     std::string game_id;
     std::string minimum_recomp_version;
     std::unordered_map<std::string, std::vector<std::string>> native_libraries;
@@ -260,6 +261,17 @@ ModManifest parse_mod_config_manifest(const std::filesystem::path& basedir, cons
         }
         else {
             throw toml::parse_error("Invalid type for author entry", el.source());
+        }
+    });
+
+    // Tags (optional): categories a mod list or store can show and filter by, e.g. "HUD", "Weapons".
+    const toml::array& tags_array = read_toml_array(manifest_table, "tags", false);
+    tags_array.for_each([&ret](auto&& el) {
+        if constexpr (toml::is_string<decltype(el)>) {
+            ret.tags.emplace_back(el.template ref<std::string>());
+        }
+        else {
+            throw toml::parse_error("Invalid type for tag entry", el.source());
         }
     });
    
@@ -520,6 +532,10 @@ void write_manifest(const std::filesystem::path& path, const ModManifest& manife
     }
 
     output_data.emplace("authors", string_vector_to_toml(manifest.authors));
+
+    if (!manifest.tags.empty()) {
+        output_data.emplace("tags", string_vector_to_toml(manifest.tags));
+    }
 
     output_data.emplace("minimum_recomp_version", manifest.minimum_recomp_version);
 
